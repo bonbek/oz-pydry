@@ -1,0 +1,219 @@
+"""Classification reports utilities."""
+
+from warnings import warn
+from os.path import exists
+import json
+from imblearn.metrics import classification_report_imbalanced
+import pandas as pd
+import numpy as np
+from .display import md
+
+class ClfReport:
+    """Stores and display batches of classification metrics.
+
+    Parameters
+    ----------
+    persist : string, optional
+        Path to the file where to store the reports (json). If the file  already
+        exists, saved reports are loaded from it. If set, reports are saved
+        each time a report is computed.
+
+    Examples
+    --------
+    Records and display 3 reports, assuming (Xs,Xt,ys,yt) is train test data.
+
+    >>> from ozpydry.metrics import ClfReport
+    >>> report = ClfReport('kNC-reports')
+    >>> for i in [5, 10, 15]
+    >>>     knc = KNeighborsClassifier(i)
+    >>>     knc.fit(Xs)
+    >>>     report(knc, 'Knc(%d)' % i, (Xs,Xt,ys,yt), False)
+    >>> report.show()
+    """
+
+    def __init__(self, persist=None):
+        self.persist_ = persist
+        self.reports_ = dict()
+        if persist is not None:
+            self.load(persist)
+
+    def __call__(self, estimator, tts, label=None, show=True):
+        """Computes and displays classification metrics.
+
+        Parameters
+        ----------
+        estimator : estimator object
+            This is assumed to implement the scikit-learn estimator interface and
+            should be prefited.
+        tts : tuple|list of array-like
+            Typically it should match the return of `train_test_split` function,
+            ie. (Xs, Xt, ys, yt)
+        label : string, optional
+            Identifier of the estimator's report, default to `estimator.__repr__`.
+            .. note:: This overrite a report with the same label.
+        show : bool, optional
+            Whether to immediately display the report.
+
+        Returns
+        -------
+        self : ClfReport
+            If `show` param is True nothing is return to prevent printing
+            object's pointer.
+        """
+        Xs, Xt, ys, yt = tts
+        id = label or str(estimator)
+        preds = estimator.predict(Xt)
+        fnrep = classification_report_imbalanced
+        stats = fnrep(preds, yt, output_dict=True)
+        cols = ['pre', 'rec', 'spe', 'f1', 'geo', 'iba', 'sup']
+        tact = ys.value_counts(normalize=True).round(4) * 100
+        self.reports_[id] = {
+            'daset': [*Xs.shape, *tact.values],
+            'stats': [
+                ['0', *[np.round(stats[0][k], 2) for k in cols]],
+                ['1', *[np.round(stats[1][k], 2) for k in cols]],
+                ['avg / total', *[np.round(stats['avg_' + k], 2) for k in cols[:-1]], ''],
+                ['test accuracy','', '', '', np.round(estimator.score(Xt, yt), 2), '', '', ''],
+                ['train accuracy','', '', '', np.round(estimator.score(Xs, ys), 2), '', '', '']]}
+        # Save if needed
+        if self.persist_:
+            self.save()
+        if show:
+            self.show(id)
+        else: # prevent pointer printing
+            return self
+
+    def show(self, include=None):
+        """Display classification reports.
+
+        Parameters
+        ----------
+        include : string or string-list, optional
+            If set, display specified report(s) otherwise all
+        """
+        if isinstance(include, str):
+            include = [include]
+        # filter reports to display
+        tre = [(k, self.reports_[k]) for k in include] \
+                if hasattr(include, "__iter__") else self.reports_.items()
+        # table header
+        out = "|||pre|rec|spe|f1|geo|iba|sup|\n"
+        out+= "|-|-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|\n"
+        # table body
+        for k, r in tre:
+            s, f, a, b = r['daset'] # dataset balancing stats
+            out+= "|%s|||||||||\n" % k
+            for i,l in enumerate(r['stats']):
+                pre = ""
+                if i == 0:
+                    pre = "_%.f%% balance_" % a
+                if i == 1:
+                    pre = "_%.f%% balance_" % b
+                out+= "|" + pre + "|" + "|".join(map(lambda x: format(x, '.2f') if isinstance(x,float) else str(x), l)) + "|\n"
+        out = f'<div class="rt">\n\n{out}\n</div>'
+        out+= """
+        <style>
+            .rt { color:#444; }
+            .rt th, .rt td { border:none; border-bottom: 1px solid lightgrey; }
+            .rt tr:nth-child(6n+1) {color:black;}
+            .rt th + th, .rt td + td { border-right: 4px solid white; }
+            .rt tr:first-child th + th + th { font-weight:normal;color:black;border-bottom-color:#888; }
+        </style>
+        """
+        md(out)
+
+    def load(self, path):
+        """Load reports from a file.
+
+        The loaded reports will replace current if any. Note that loading reports
+        won't flag this instance as persistent. See `__init__` and `save`.
+        .. note:
+            the method silently fail if the file did not exists.
+
+        Parameters
+        ----------
+        path : string
+            Path of the json encoded file to load.
+        """
+        if exists(path):
+            self.reports_ = json.load(open(path))
+
+    def save(self, path=None):
+        """Saves computed reports.
+
+        Parameters
+        ----------
+        path : string, optional
+            File path to save the reports into. This ovewrite the given path
+            at init time when instance is flaged as persistant see `__init__`
+            .. note:: if the path contains folders, those must exists
+
+        Warns
+        -----
+            Raise warning if no suitable path found.
+        """
+        if path is None:
+            if  self.persist_ is not None:
+                path = self.persist_
+            else:
+                warn("No path given nor at init time, reports cannot be saved.")
+
+        def np_encoder(object):
+            if isinstance(object, np.generic):
+                return object.item()
+
+        json.dump(self.reports_, open(path, "w"), default=np_encoder)
+
+    def to_pandas(self):
+        """Constructs a DataFrame from the computed reports.
+
+        Returns
+        -------
+        pandas.DataFrame
+        """
+        col = ['Estimator','*','pre', 'rec', 'spe', 'f1', 'geo', 'iba', 'sup']
+        mdf = pd.DataFrame(columns=col).reset_index(drop=True)
+        for k, r in self.reports_.items():
+            mdf.reset_index()
+            rdf = pd.DataFrame([[k, *vs] for vs in r.get('stats')], columns=col)
+            mdf = pd.concat([mdf, rdf])
+            mdf[col[2:]] = mdf[col[2:]].apply(pd.to_numeric)
+
+        return mdf.set_index(keys=['Estimator','*'])
+
+    def _tostr(self, include=None):
+        cols = ['pre', 'rec', 'spe', 'f1', 'geo', 'iba', 'sup']
+        out = "{:<16}{:>16}{:>6} {:>6} {:>6} {:>6} {:>6} {:>6} {:^8}\n".format('','',*cols)
+        tre = [(include, self.reports_[include])] if include else self.reports_.items()
+        for k, r in tre:
+            s, f, a, b = r['daset'] # samples, features, cl0, cl1
+            out+= "\033[7m{:<30}\033[0m\n".format(k)
+            for i, l in enumerate(r['stats']):
+                pre = ""
+                if i == 0:
+                    pre = "%.f%% balance" % a
+                if i == 1:
+                    pre = "%.f%% balance" % b
+                vals = map(lambda x: format(x, '.2f') if isinstance(x,float) else str(x), l)
+                out+= "\033[3m{:<16}\033[0m{:>16} {:>6} {:>6} {:>6} {:>6} {:>6} {:>6} {:^8}\n".format(pre, *vals)
+        return out
+
+    def __str__(self):
+        """Raw text representation of the reports."""
+        return self._tostr()
+
+
+def clf_report(estimator, tts, label=None):
+    """Display classification report.
+
+    Unlike ClfReport, this function does not store the computed report.
+    See `ClfReport.__call__` for parameters description.
+
+    Examples
+    --------
+    >>> from ozpydry.metrics import clf_report
+    >>> lreg = LogisticRegression()
+    >>> lreg.fit(Xs)
+    >>> clf_report(lreg, 'LogReg(%d)', (Xs,Xt,ys,yt))
+    """
+    return ClfReport()(estimator, tts, label)
