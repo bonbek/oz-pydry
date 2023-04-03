@@ -27,7 +27,7 @@ class ClfReport:
     >>> for i in [5, 10, 15]
     >>>     knc = KNeighborsClassifier(i)
     >>>     knc.fit(Xs)
-    >>>     report(knc, 'Knc(%d)' % i, (Xs,Xt,ys,yt), False)
+    >>>     report(knc, (Xs,Xt,ys,yt), 'Knc(%d)' % i, False)
     >>> report.show()
     """
 
@@ -214,6 +214,6 @@ def clf_report(estimator, tts, label=None):
     >>> from ozpydry.metrics import clf_report
     >>> lreg = LogisticRegression()
     >>> lreg.fit(Xs)
-    >>> clf_report(lreg, 'LogReg(%d)', (Xs,Xt,ys,yt))
+    >>> clf_report(lreg, (Xs,Xt,ys,yt), 'LogReg')
     """
     return ClfReport()(estimator, tts, label)
