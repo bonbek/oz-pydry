@@ -86,18 +86,18 @@ class ClfReport:
             return self
 
     def tomdc_(self, reps, tone=False, header=None):
-        out = "|%s|test<br>acc.|train<br>acc.|0<br>pre&nbsp; . &nbsp;rec&nbsp; . &nbsp;&nbsp;f1|1<br>pre&nbsp; . &nbsp;rec&nbsp; . &nbsp;&nbsp;f1|<br>%% bal.|\n" % (header.replace('\n',"<br>") if header is not None else "")
-        out+= "|-|:-:|:-:|:-:|:-:|:-:|\n"
+        out = "|%s|test<br>acc.|train<br>acc.|0<br>pre&nbsp; . &nbsp;rec&nbsp; . &nbsp;&nbsp;f1|1<br>pre&nbsp; . &nbsp;rec&nbsp; . &nbsp;&nbsp;f1|<br>%% bal.|<br>obs|\n" % (header.replace('\n',"<br>") if header is not None else "")
+        out+= "|-|:-:|:-:|:-:|:-:|:-:|:-|\n"
         for k, r in reps:
-            _, _, a, b = r['daset'] # dataset balancing stats
+            s, f, a, b = r['daset'] # dataset balancing stats
             cl = 'c' if tone else ""
             vals = [[v if isinstance(v, str) else \
                 '<i class="v %s" style="--v:%.2f">%.2f</i>' % (cl,v,v) for v in ss] for ss in r['stats']]
-            out+= "|%s|%s|%s|%s&nbsp;&nbsp;%s&nbsp;&nbsp;%s|%s&nbsp;&nbsp;%s&nbsp;&nbsp;%s|<small>%.f / %.f</small>|\n" % (k,
+            out+= "|%s|%s|%s|%s&nbsp;&nbsp;%s&nbsp;&nbsp;%s|%s&nbsp;&nbsp;%s&nbsp;&nbsp;%s|<small>%.f / %.f</small>|<small>%d</small>|\n" % (k,
                 vals[3][4], vals[4][4],
                 vals[0][1], vals[0][2], vals[0][4],
                 vals[1][1], vals[1][2], vals[1][4],
-                a, b)
+                a, b, s)
         out = f'<div class="rt">\n\n{out}\n</div>'
         out+= """
         <style>
