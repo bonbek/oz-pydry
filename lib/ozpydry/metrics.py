@@ -15,8 +15,10 @@ class ClfReport:
     ----------
     persist : string, optional
         Path to the file where to store the reports (json). If the file  already
-        exists, saved reports are loaded from it. If set, reports are saved
-        each time a report is computed.
+        exists, saved reports are loaded from it unless *reset* is True. If set,
+        reports are saved each time a report is computed.
+    reset : bool, optional
+        Clear saved reports.
 
     Examples
     --------
@@ -31,10 +33,10 @@ class ClfReport:
     >>> report.show()
     """
 
-    def __init__(self, persist=None):
+    def __init__(self, persist=None, reset=False):
         self.persist_ = persist
         self.reports_ = dict()
-        if persist is not None:
+        if persist is not None and not reset:
             self.load(persist)
 
     def __call__(self, estimator, tts, label=None, show=True):
