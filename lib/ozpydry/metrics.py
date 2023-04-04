@@ -83,44 +83,87 @@ class ClfReport:
         else: # prevent pointer printing
             return self
 
-    def show(self, include=None):
+    def tomdc_(self, reps, tone=False, header=None):
+        out = "|%s|test<br>acc.|train<br>acc.|0<br>pre&nbsp; . &nbsp;rec&nbsp; . &nbsp;&nbsp;f1|1<br>pre&nbsp; . &nbsp;rec&nbsp; . &nbsp;&nbsp;f1|<br>%% bal.|\n" % (header.replace('\n',"<br>") if header is not None else "")
+        out+= "|-|:-:|:-:|:-:|:-:|:-:|\n"
+        for k, r in reps:
+            _, _, a, b = r['daset'] # dataset balancing stats
+            cl = 'c' if tone else ""
+            vals = [[v if isinstance(v, str) else \
+                '<i class="v %s" style="--v:%.2f">%.2f</i>' % (cl,v,v) for v in ss] for ss in r['stats']]
+            out+= "|%s|%s|%s|%s&nbsp;&nbsp;%s&nbsp;&nbsp;%s|%s&nbsp;&nbsp;%s&nbsp;&nbsp;%s|<small>%.f / %.f</small>|\n" % (k,
+                vals[3][4], vals[4][4],
+                vals[0][1], vals[0][2], vals[0][4],
+                vals[1][1], vals[1][2], vals[1][4],
+                a, b)
+        out = f'<div class="rt">\n\n{out}\n</div>'
+        out+= """
+        <style>
+            .rt { color:#444; }
+            .rt .v { padding:2px; font-style:normal; }
+            .rt .c { color:#222; background:hsl(calc(((var(--v) - .5) / .5) * 120), 70%, 85%, calc(var(--v))); }
+            .rt th, .rt td { border:none; border-bottom: 1px solid lightgrey; }
+            .rt th, .rt td { border-right: 4px solid white; }
+            .rt tr:first-child th:first-child { font-size:.8em;font-weight:normal;text-align:left; }
+            .rt td:first-child { text-align:right; }
+            .rt tr:first-child th + th { font-weight:normal;color:black;border-bottom-color:#888; }
+        </style>
+        """
+        return out
+
+    def tomdf_(self, reps=None, tone=False, header=None):
+        out = "|%s||pre|rec|spe|f1|geo|iba|sup|\n" % (header.replace('\n',"<br>") if header is not None else "")
+        out+= "|-|-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|\n"
+        for k, r in reps:
+            s, f, a, b = r['daset'] # dataset balancing stats
+            out+= "|%s|||||||||\n" % k
+            cl = 'c' if tone else ""
+            vals = [['<i class="v %s" style="--v:%.2f">%.2f</i>' % (cl,v,v) if isinstance(v, float) else \
+                        str(v) for v in ss] for ss in r['stats']]
+            for i,l in enumerate(vals):
+                pre = ""
+                if i == 0:
+                    pre = "_%.f%% balance_" % a
+                if i == 1:
+                    pre = "_%.f%% balance_" % b
+                # out+= "|" + pre + "|" + "|".join(map(lambda x: format(x, '.2f') if isinstance(x,float) else str(x), l)) + "|\n"
+                out+= "|" + pre + "|" + "|".join(l) + "|\n"
+        out = f'<div class="rt">\n\n{out}\n</div>'
+        out+= """
+        <style>
+            .rt { color:#444; }
+            .rt .v { padding:2px; font-style:normal; }
+            .rt .c { color:#222; background:hsl(calc(((var(--v) - .5) / .5) * 120), 70%, 85%, calc(var(--v))); }
+            .rt th, .rt td { border:none; border-bottom: 1px solid lightgrey; }
+            .rt tr:first-child th:first-child { font-size:.8em;font-weight:normal;text-align:left; }
+            .rt tr:nth-child(6n+1) {color:black;}
+            .rt th + th, .rt td + td { border-right: 4px solid white; }
+            .rt tr:first-child th + th + th { font-weight:normal;color:black;border-bottom-color:#888; }
+        </style>
+        """
+        return out
+
+    def show(self, include=None, compact=False, title=None, tone=False):
         """Display classification reports.
 
         Parameters
         ----------
         include : string or string-list, optional
             If set, display specified report(s) otherwise all
+        compact : bool, optional
+            Display in compact mode, one line by report
+        tone : bool, optional
+            Highlights values with colors
         """
+
+        # filter reports to display
         if isinstance(include, str):
             include = [include]
-        # filter reports to display
-        tre = [(k, self.reports_[k]) for k in include] \
-                if hasattr(include, "__iter__") else self.reports_.items()
-        # table header
-        out = "|||pre|rec|spe|f1|geo|iba|sup|\n"
-        out+= "|-|-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|\n"
-        # table body
-        for k, r in tre:
-            s, f, a, b = r['daset'] # dataset balancing stats
-            out+= "|%s|||||||||\n" % k
-            for i,l in enumerate(r['stats']):
-                pre = ""
-                if i == 0:
-                    pre = "_%.f%% balance_" % a
-                if i == 1:
-                    pre = "_%.f%% balance_" % b
-                out+= "|" + pre + "|" + "|".join(map(lambda x: format(x, '.2f') if isinstance(x,float) else str(x), l)) + "|\n"
-        out = f'<div class="rt">\n\n{out}\n</div>'
-        out+= """
-        <style>
-            .rt { color:#444; }
-            .rt th, .rt td { border:none; border-bottom: 1px solid lightgrey; }
-            .rt tr:nth-child(6n+1) {color:black;}
-            .rt th + th, .rt td + td { border-right: 4px solid white; }
-            .rt tr:first-child th + th + th { font-weight:normal;color:black;border-bottom-color:#888; }
-        </style>
-        """
-        md(out)
+
+        reps = [(k, self.reports_[k]) for k in include] \
+                    if hasattr(include, "__iter__") else self.reports_.items()
+
+        md(self.tomdc_(reps, tone, title) if compact else self.tomdf_(reps, tone, title))
 
     def load(self, path):
         """Load reports from a file.
