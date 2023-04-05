@@ -107,7 +107,7 @@ class ClfReport:
             .rt th, .rt td { border:none; border-bottom: 1px solid lightgrey; }
             .rt th, .rt td { border-right: 4px solid white; }
             .rt tr:first-child th:first-child { font-size:.8em;font-weight:normal;text-align:left; }
-            .rt td:first-child { text-align:right; }
+            .rt td:first-child { text-align:right; padding:0 10px; }
             .rt tr:first-child th + th { font-weight:normal;color:black;border-bottom-color:#888; }
         </style>
         """
