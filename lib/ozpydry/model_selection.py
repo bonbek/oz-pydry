@@ -24,6 +24,7 @@ from shapely.geometry import Point
 from sklearn.model_selection import train_test_split
 from imblearn.under_sampling import RandomUnderSampler
 from imblearn.over_sampling import RandomOverSampler
+from sklearn.preprocessing import StandardScaler
 import numpy as np
 import pandas as pd
 from .display import md
@@ -102,7 +103,8 @@ def load_df(extras=None, path="../data/weatherAUS.csv"):
 
     return df
 
-def sample_tts(resample=None, dt=False, drop=[], encode='onehot', test_size=.2, verbose=False):
+def sample_tts(resample=None, dt=False, drop=[], encode='onehot', na='drop',
+               prior=None, scale=False, test_size=.2, verbose=False):
     """Samples random train and test subsets.
 
     Wraps `train_test_split` on main dataset cleaned from NAs to apply variables
@@ -115,8 +117,18 @@ def sample_tts(resample=None, dt=False, drop=[], encode='onehot', test_size=.2, 
     resample : {'under', 'over'}, optional
         Resample according to RandomUnderSampler or RandomOverSampler.
 
-    dt : {'month'}, optional
-        Whether to attach observation's month (Month var).
+    dt : bool or string, optional
+        When True, keep original *Date* variable.
+        When string, wether to attach date's components to observations according
+        to the following (only one format per component allowed, ex: 'Yma').
+        Note that *Date* variable is droped when a date's component is attached.
+
+        'Y' : year with century (Year var)
+        'm' : month as decimal number  [1,12] (Month var)
+        'B' : full month name (Month var)
+        'd' : day of the month as a decimal number [01,31] (Day var)
+        'w' : weekday as a decimal number [0,6] (Day var)
+        'a' : abbreviated weekday name (Day var)
 
     drop : list, optional
         The list of variables to drop from the set.
@@ -126,6 +138,14 @@ def sample_tts(resample=None, dt=False, drop=[], encode='onehot', test_size=.2, 
 
         'onehot' : applies `get_dummies`
         'discrete' : converts to int labels in range[1,n]
+
+    na : {'keep', 'drop', 'fill'}, optional
+        Keep, drops or fill NAs. Categorical are filled with the variable's modes
+        and numerical with their means.
+
+    prior : callable, optional
+        A callable applied before any preprocessing that take the DataFrame
+        and return a Dataframe.
 
     test_size : float or int, optional
         see `train_test_split`.
@@ -142,23 +162,54 @@ def sample_tts(resample=None, dt=False, drop=[], encode='onehot', test_size=.2, 
     if df is None:
         load_df()
 
-    csel = list(set(df.columns).difference(drop))
-    data = df[csel].dropna()
+    data = df
 
-    if dt and 'm' in dt:
-        data['Month'] = df.Date.dt.month
+    if callable(prior): # Apply prior hook
+        data = prior(data)
 
+    # Attach Date components
+    if isinstance(dt, str):
+        if 'Y' in dt:
+            data = data.assign(Year=df.Date.dt.year)
+        if 'm' in dt:
+            data = data.assign(Month=df.Date.dt.month)
+        if 'B' in dt:
+            data = data.assign(Month=df.Date.dt.month_name())
+        if 'd' in dt:
+            data = data.assign(Day=df.Date.dt.day)
+        if 'w' in dt:
+            data = data.assign(Day=df.Date.dt.weekday)
+        if 'a' in dt:
+            data = data.assign(Day=df.Date.dt.day_name())
+        data = data.drop(columns=['Date'])
+    elif not dt:
+        data = data.drop(columns=['Date'])
+
+    # Time to drop before fill na
+    data = data.drop(columns=drop)
+
+    if na == 'drop':
+        data = data.dropna()
+    elif na == 'fill':
+        nums = data.select_dtypes('number')
+        data[nums.columns] = nums.fillna(nums.mean())
+        cats = data.select_dtypes('O')
+        data[cats.columns] = cats.fillna(cats.mode())
+
+    # Prevent trailing NAs error
+    data = data.dropna(subset=['RainTomorrow', 'RainToday'])
     data = data.replace(['Yes', 'No'], [1, 0])
     targ = data.RainTomorrow
-    data = data.drop(columns=['RainTomorrow', 'Date'])
+    data = data.drop(columns=['RainTomorrow'])
 
     # Categorical vars encoding
-    if encode == 'onehot':
-        data = pd.get_dummies(data)
-    elif encode == 'discrete':
-        repl = data.select_dtypes('O').apply(pd.unique)
-        data = data.replace(repl.to_dict(),
-                            repl.apply(lambda x: np.arange(1, len(x) + 1)).to_dict())
+    if encode is not None:
+        if encode == 'onehot':
+            data = pd.get_dummies(data)
+        elif encode == 'discrete':
+            repl = data.select_dtypes('O').apply(pd.unique)
+            data = data.replace(repl.to_dict(),
+                                repl.apply(lambda x: np.arange(1, len(x) + 1)).to_dict())
 
     # Split train/test & resample (train only)
     Xs, Xt, ys, yt = train_test_split(data, targ, test_size=test_size,
@@ -168,7 +219,13 @@ def sample_tts(resample=None, dt=False, drop=[], encode='onehot', test_size=.2, 
             Xs, ys = RandomUnderSampler(random_state=seed).fit_resample(Xs, ys)
         else:
             Xs, ys = RandomOverSampler(random_state=seed).fit_resample(Xs, ys)
-    
+
+    # 'Normalize' data
+    if scale:
+        sc = StandardScaler().fit(Xs)
+        Xs.iloc[:,:] = sc.transform(Xs)
+        Xt.iloc[:,:] = sc.transform(Xt)
+
     # Print sampling info
     if verbose:
         tact = ys.value_counts(normalize=True).round(4) * 100
