@@ -207,9 +207,8 @@ def sample_tts(resample=None, dt=False, drop=[], encode='onehot', na='drop',
         if encode == 'onehot':
             data = pd.get_dummies(data)
         elif encode == 'discrete':
-            repl = data.select_dtypes('O').apply(pd.unique)
-            data = data.replace(repl.to_dict(),
-                                repl.apply(lambda x: np.arange(1, len(x) + 1)).to_dict())
+            repl = data.select_dtypes('O').apply(pd.unique).to_dict()
+            data = data.replace(dict([(k, dict(zip(vs.values(), vs.keys()))) for k, vs in repl.items()]))
 
     # Split train/test & resample (train only)
     Xs, Xt, ys, yt = train_test_split(data, targ, test_size=test_size,
