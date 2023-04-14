@@ -104,7 +104,7 @@ def load_df(extras=None, path="../data/weatherAUS.csv"):
     return df
 
 def sample_tts(resample=None, dt=False, drop=[], encode='onehot', na='drop',
-               prior=None, scale=False, test_size=.2, verbose=False):
+               prior=None, scale=False, test_size=.2, verbose=False, target='RainTomorrow'):
     """Samples random train and test subsets.
 
     Wraps `train_test_split` on main dataset cleaned from NAs to apply variables
@@ -197,10 +197,10 @@ def sample_tts(resample=None, dt=False, drop=[], encode='onehot', na='drop',
         data[cats.columns] = cats.fillna(cats.mode())
 
     # Prevent trailing NAs error
-    data = data.dropna(subset=['RainTomorrow', 'RainToday'])
+    data = data.dropna(subset=[target])
     data = data.replace(['Yes', 'No'], [1, 0])
-    targ = data.RainTomorrow
-    data = data.drop(columns=['RainTomorrow'])
+    targ = data[target]
+    data = data.drop(columns=[target])
 
     # Categorical vars encoding
     if encode is not None:
