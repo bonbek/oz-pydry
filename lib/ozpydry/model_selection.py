@@ -33,6 +33,7 @@ from .display import md
 seed = 756
 
 df = None
+df_nna = None
 df_locations = None
 
 def load_location_extras():
@@ -67,8 +68,50 @@ def load_location_extras():
     df_locations = locations.to_crs(epsg=3035).sjoin_nearest(climate).to_crs(epsg=4326).drop(columns=['index_right', 'geometry'])
     return df_locations
 
-def load_df(extras=None, path="../data/weatherAUS.csv"):
+def fillna_by_location_climate_(dfc):
+    """Fill na (try to) with climate's mean & mode.
+
+    Internal, use `load_df` in place.
+    ~ 1mn to compute
+
+    Returns
+    -------
+    DataFrame
+    """
+
+    def unless_mode(x):
+        m = x.mode()
+        return m[0] if len(m) > 0 else np.nan
+
+    feats = dfc.drop(columns=['Date', 'Location', 'KCode', 'RainToday', 'RainTomorrow']).columns
+    ncols = dfc.select_dtypes('number').columns
+    ccols = dfc.select_dtypes('O').columns
+
+    # Global means/mode
+    da = pd.concat([dfc.groupby('Date')[ncols].mean(numeric_only=True),
+                    dfc.groupby('Date')[ccols].agg(unless_mode)], axis=1)[feats].sort_index()
+
+    ndf = None
+
+    for k in df.KCode.unique():
+        dk = df[df.KCode == k]
+        # Climate's means/mode
+        kn = pd.concat([dk.groupby('Date')[ncols].mean(numeric_only=True),
+                        dk.groupby('Date')[ccols].agg(unless_mode)], axis=1)[feats].sort_index()
+        for l in dk.Location.unique():
+            dl = dk[dk.Location == l].set_index('Date').sort_index()
+            dl[feats] = dl[feats].fillna(kn.drop(kn.index.difference(dl.index)))
+            if dl[feats].isna().any().sum() > 0:
+                dl[feats] = dl[feats].fillna(da.drop(da.index.difference(dl.index)))
+            ndf = dl if ndf is None else pd.concat([ndf, dl])
+
+    return ndf.reset_index()
+
+def load_df(extras=None, fillna=False, path="../data/weatherAUS.csv"):
     """Load main dataset.
+
+    .. note:: first call with extras and/or na parameter may take some time
+              due to geodata/na  processing.
 
     Parameters
     ----------
@@ -77,10 +120,10 @@ def load_df(extras=None, path="../data/weatherAUS.csv"):
 
         - 'climate': climate's Koppen code is attached (KCode var)
         - 'region': observation's region is attached (Region var)
-        - 'full: the two above plus climate Koppen description (Climate var)
+        - 'full': the two above plus climate Koppen description (Climate var)
 
-        .. note:: first call with extras parameter may take some time due to
-                  geodata precessing.
+    fillna : bool, optional
+        If True fill na with climate's mean and mode.
 
     path : string, optional
         File path of a specific dataset to load
@@ -89,9 +132,14 @@ def load_df(extras=None, path="../data/weatherAUS.csv"):
     -------
     DataFrame
     """
-    global df, df_locations
+    global df, df_locations, df_nna
 
-    df = pd.read_csv(path, parse_dates=['Date'])
+    if fillna:  
+        if df_nna is None:
+            df_nna = fillna_by_location_climate_(load_df("climate"))
+        df = df_nna.drop(columns='KCode')
+    else:
+        df = pd.read_csv(path, parse_dates=['Date'])
 
     if extras in ['climate', 'region', 'full']:
         if df_locations is None: # data cached by load_location_extras
