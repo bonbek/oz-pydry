@@ -24,6 +24,7 @@ from shapely.geometry import Point
 from sklearn.model_selection import train_test_split
 from imblearn.under_sampling import RandomUnderSampler
 from imblearn.over_sampling import RandomOverSampler
+from sklearn.preprocessing import StandardScaler
 import numpy as np
 import pandas as pd
 from .display import md
@@ -32,6 +33,7 @@ from .display import md
 seed = 756
 
 df = None
+df_nna = None
 df_locations = None
 
 def load_location_extras():
@@ -66,8 +68,50 @@ def load_location_extras():
     df_locations = locations.to_crs(epsg=3035).sjoin_nearest(climate).to_crs(epsg=4326).drop(columns=['index_right', 'geometry'])
     return df_locations
 
-def load_df(extras=None, path="../data/weatherAUS.csv"):
+def fillna_by_location_climate_(dfc):
+    """Fill na (try to) with climate's mean & mode.
+
+    Internal, use `load_df` in place.
+    ~ 1mn to compute
+
+    Returns
+    -------
+    DataFrame
+    """
+
+    def unless_mode(x):
+        m = x.mode()
+        return m[0] if len(m) > 0 else np.nan
+
+    feats = dfc.drop(columns=['Date', 'Location', 'KCode', 'RainToday', 'RainTomorrow']).columns
+    ncols = dfc.select_dtypes('number').columns
+    ccols = dfc.select_dtypes('O').columns
+
+    # Global means/mode
+    da = pd.concat([dfc.groupby('Date')[ncols].mean(numeric_only=True),
+                    dfc.groupby('Date')[ccols].agg(unless_mode)], axis=1)[feats].sort_index()
+
+    ndf = None
+
+    for k in df.KCode.unique():
+        dk = df[df.KCode == k]
+        # Climate's means/mode
+        kn = pd.concat([dk.groupby('Date')[ncols].mean(numeric_only=True),
+                        dk.groupby('Date')[ccols].agg(unless_mode)], axis=1)[feats].sort_index()
+        for l in dk.Location.unique():
+            dl = dk[dk.Location == l].set_index('Date').sort_index()
+            dl[feats] = dl[feats].fillna(kn.drop(kn.index.difference(dl.index)))
+            if dl[feats].isna().any().sum() > 0:
+                dl[feats] = dl[feats].fillna(da.drop(da.index.difference(dl.index)))
+            ndf = dl if ndf is None else pd.concat([ndf, dl])
+
+    return ndf.reset_index()
+
+def load_df(extras=None, fillna=False, path="../data/weatherAUS.csv"):
     """Load main dataset.
+
+    .. note:: first call with extras and/or na parameter may take some time
+              due to geodata/na  processing.
 
     Parameters
     ----------
@@ -76,10 +120,10 @@ def load_df(extras=None, path="../data/weatherAUS.csv"):
 
         - 'climate': climate's Koppen code is attached (KCode var)
         - 'region': observation's region is attached (Region var)
-        - 'full: the two above plus climate Koppen description (Climate var)
+        - 'full': the two above plus climate Koppen description (Climate var)
 
-        .. note:: first call with extras parameter may take some time due to
-                  geodata precessing.
+    fillna : bool, optional
+        If True fill na with climate's mean and mode.
 
     path : string, optional
         File path of a specific dataset to load
@@ -88,9 +132,14 @@ def load_df(extras=None, path="../data/weatherAUS.csv"):
     -------
     DataFrame
     """
-    global df, df_locations
+    global df, df_locations, df_nna
 
-    df = pd.read_csv(path, parse_dates=['Date'])
+    if fillna:  
+        if df_nna is None:
+            df_nna = fillna_by_location_climate_(load_df("climate"))
+        df = df_nna.drop(columns='KCode')
+    else:
+        df = pd.read_csv(path, parse_dates=['Date'])
 
     if extras in ['climate', 'region', 'full']:
         if df_locations is None: # data cached by load_location_extras
@@ -102,7 +151,8 @@ def load_df(extras=None, path="../data/weatherAUS.csv"):
 
     return df
 
-def sample_tts(resample=None, dt=False, drop=[], encode='onehot', test_size=.2, verbose=False):
+def sample_tts(resample=None, dt=False, drop=[], encode='onehot', na='drop',
+               prior=None, scale=False, test_size=.2, verbose=False, target='RainTomorrow'):
     """Samples random train and test subsets.
 
     Wraps `train_test_split` on main dataset cleaned from NAs to apply variables
@@ -115,8 +165,18 @@ def sample_tts(resample=None, dt=False, drop=[], encode='onehot', test_size=.2, 
     resample : {'under', 'over'}, optional
         Resample according to RandomUnderSampler or RandomOverSampler.
 
-    dt : {'month'}, optional
-        Whether to attach observation's month (Month var).
+    dt : bool or string, optional
+        When True, keep original *Date* variable.
+        When string, wether to attach date's components to observations according
+        to the following (only one format per component allowed, ex: 'Yma').
+        Note that *Date* variable is droped when a date's component is attached.
+
+        'Y' : year with century (Year var)
+        'm' : month as decimal number  [1,12] (Month var)
+        'B' : full month name (Month var)
+        'd' : day of the month as a decimal number [01,31] (Day var)
+        'w' : weekday as a decimal number [0,6] (Day var)
+        'a' : abbreviated weekday name (Day var)
 
     drop : list, optional
         The list of variables to drop from the set.
@@ -126,6 +186,14 @@ def sample_tts(resample=None, dt=False, drop=[], encode='onehot', test_size=.2, 
 
         'onehot' : applies `get_dummies`
         'discrete' : converts to int labels in range[1,n]
+
+    na : {'keep', 'drop', 'fill'}, optional
+        Keep, drops or fill NAs. Categorical are filled with the variable's modes
+        and numerical with their means.
+
+    prior : callable, optional
+        A callable applied before any preprocessing that take the DataFrame
+        and return a Dataframe.
 
     test_size : float or int, optional
         see `train_test_split`.
@@ -142,23 +210,53 @@ def sample_tts(resample=None, dt=False, drop=[], encode='onehot', test_size=.2, 
     if df is None:
         load_df()
 
-    csel = list(set(df.columns).difference(drop))
-    data = df[csel].dropna()
+    data = df
 
-    if dt and 'm' in dt:
-        data['Month'] = df.Date.dt.month
+    if callable(prior): # Apply prior hook
+        data = prior(data)
 
+    # Attach Date components
+    if isinstance(dt, str):
+        if 'Y' in dt:
+            data = data.assign(Year=df.Date.dt.year)
+        if 'm' in dt:
+            data = data.assign(Month=df.Date.dt.month)
+        if 'B' in dt:
+            data = data.assign(Month=df.Date.dt.month_name())
+        if 'd' in dt:
+            data = data.assign(Day=df.Date.dt.day)
+        if 'w' in dt:
+            data = data.assign(Day=df.Date.dt.weekday)
+        if 'a' in dt:
+            data = data.assign(Day=df.Date.dt.day_name())
+        data = data.drop(columns=['Date'])
+    elif not dt:
+        data = data.drop(columns=['Date'])
+
+    # Time to drop before fill na
+    data = data.drop(columns=drop)
+
+    if na == 'drop':
+        data = data.dropna()
+    elif na == 'fill':
+        nums = data.select_dtypes('number')
+        data[nums.columns] = nums.fillna(nums.mean())
+        cats = data.select_dtypes('O')
+        data[cats.columns] = cats.fillna(cats.mode())
+
+    # Prevent trailing NAs error
+    data = data.dropna(subset=[target])
     data = data.replace(['Yes', 'No'], [1, 0])
-    targ = data.RainTomorrow
-    data = data.drop(columns=['RainTomorrow', 'Date'])
+    targ = data[target]
+    data = data.drop(columns=[target])
 
     # Categorical vars encoding
-    if encode == 'onehot':
-        data = pd.get_dummies(data)
-    elif encode == 'discrete':
-        repl = data.select_dtypes('O').apply(pd.unique)
-        data = data.replace(repl.to_dict(),
-                            repl.apply(lambda x: np.arange(1, len(x) + 1)).to_dict())
+    if encode is not None:
+        if encode == 'onehot':
+            data = pd.get_dummies(data)
+        elif encode == 'discrete':
+            repl = [(c, s.unique()) for c, s in data.select_dtypes('O').items()]
+            data = data.replace(dict([(k, dict(zip(vs, range(len(vs))))) for k, vs in repl]))
 
     # Split train/test & resample (train only)
     Xs, Xt, ys, yt = train_test_split(data, targ, test_size=test_size,
@@ -168,7 +266,13 @@ def sample_tts(resample=None, dt=False, drop=[], encode='onehot', test_size=.2, 
             Xs, ys = RandomUnderSampler(random_state=seed).fit_resample(Xs, ys)
         else:
             Xs, ys = RandomOverSampler(random_state=seed).fit_resample(Xs, ys)
-    
+
+    # 'Normalize' data
+    if scale:
+        sc = StandardScaler().fit(Xs)
+        Xs.iloc[:,:] = sc.transform(Xs)
+        Xt.iloc[:,:] = sc.transform(Xt)
+
     # Print sampling info
     if verbose:
         tact = ys.value_counts(normalize=True).round(4) * 100
