@@ -193,3 +193,22 @@ section.main > div:first-child > div:first-child > div:first-child > [data-testi
         opacity: 0;
     }
 }
+
+/* ClfReport */
+.rt {
+    margin-top: 20px;
+    font-size: .9em;
+}
+.rt table {
+    width: 100%;
+}
+
+.rt tr { border-top: none; }
+
+.rt tr > td:first-child {
+    width: 32%;
+}
+
+.rt td {
+    padding:4px;
+}
