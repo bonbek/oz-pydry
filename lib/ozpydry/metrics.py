@@ -85,14 +85,21 @@ class ClfReport:
         else: # prevent pointer printing
             return self
 
+    def tone_(self, v):
+        """Background style for colored cell"""
+        return f'background:hsl(calc((({v} - .5) / .5) * 120), 70%, 85%, calc({v}));'
+
     def tomdc_(self, reps, tone=False, header=None):
+        """Markdown compact display"""
+        mkt = self.tone_ if tone else (lambda v: "")
         out = "|%s|test<br>acc.|train<br>acc.|0<br>pre&nbsp; . &nbsp;rec&nbsp; . &nbsp;&nbsp;f1|1<br>pre&nbsp; . &nbsp;rec&nbsp; . &nbsp;&nbsp;f1|<br>%% bal.|<br>obs|\n" % (header.replace('\n',"<br>") if header is not None else "")
         out+= "|-|:-:|:-:|:-:|:-:|:-:|:-|\n"
+        mks = lambda v: f'background:hsl(calc((({v} - .5) / .5) * 120), 70%, 85%, calc({v}));'
         for k, r in reps:
             s, f, a, b = r['daset'] # dataset balancing stats
             cl = 'c' if tone else ""
             vals = [[v if isinstance(v, str) else \
-                '<i class="v %s" style="--v:%.2f">%.2f</i>' % (cl,v,v) for v in ss] for ss in r['stats']]
+                '<span class="v %s" style="%s">%.2f</span>' % (cl,mkt(v),v) for v in ss] for ss in r['stats']]
             out+= "|%s|%s|%s|%s&nbsp;&nbsp;%s&nbsp;&nbsp;%s|%s&nbsp;&nbsp;%s&nbsp;&nbsp;%s|<small>%.f / %.f</small>|<small>%d</small>|\n" % (k,
                 vals[3][4], vals[4][4],
                 vals[0][1], vals[0][2], vals[0][4],
@@ -103,7 +110,6 @@ class ClfReport:
         <style>
             .rt { color:#444; }
             .rt .v { padding:2px; font-style:normal; }
-            .rt .c { color:#222; background:hsl(calc(((var(--v) - .5) / .5) * 120), 70%, 85%, calc(var(--v))); }
             .rt th, .rt td { border:none; border-bottom: 1px solid lightgrey; }
             .rt th, .rt td { border-right: 4px solid white; }
             .rt tr:first-child th:first-child { font-size:.8em;font-weight:normal;text-align:left; }
@@ -114,13 +120,15 @@ class ClfReport:
         return out
 
     def tomdf_(self, reps=None, tone=False, header=None):
+        """Markdown full display"""
+        mkt = self.tone_ if tone else (lambda v: "")
         out = "|%s||pre|rec|spe|f1|geo|iba|sup|\n" % (header.replace('\n',"<br>") if header is not None else "")
         out+= "|-|-:|:-:|:-:|:-:|:-:|:-:|:-:|:-:|\n"
         for k, r in reps:
             s, f, a, b = r['daset'] # dataset balancing stats
             out+= "|%s|||||||||\n" % k
             cl = 'c' if tone else ""
-            vals = [['<i class="v %s" style="--v:%.2f">%.2f</i>' % (cl,v,v) if isinstance(v, float) else \
+            vals = [['<i class="v %s" style="%s">%.2f</i>' % (cl,mkt(v),v) if isinstance(v, float) else \
                         str(v) for v in ss] for ss in r['stats']]
             for i,l in enumerate(vals):
                 pre = ""
@@ -135,7 +143,6 @@ class ClfReport:
         <style>
             .rt { color:#444; }
             .rt .v { padding:2px; font-style:normal; }
-            .rt .c { color:#222; background:hsl(calc(((var(--v) - .5) / .5) * 120), 70%, 85%, calc(var(--v))); }
             .rt th, .rt td { border:none; border-bottom: 1px solid lightgrey; }
             .rt tr:first-child th:first-child { font-size:.8em;font-weight:normal;text-align:left; }
             .rt tr:nth-child(6n+1) {color:black;}
@@ -144,6 +151,16 @@ class ClfReport:
         </style>
         """
         return out
+
+    def preps_(self, include=None):
+        """Select reports"""
+        # filter reports to display
+        if isinstance(include, str):
+            include = [include]
+
+        return [(k, self.reports_[k]) for k in include] \
+                    if hasattr(include, "__iter__") else self.reports_.items()
+
 
     def show(self, include=None, compact=False, title=None, tone=False):
         """Display classification reports.
@@ -158,13 +175,7 @@ class ClfReport:
             Highlights values with colors
         """
 
-        # filter reports to display
-        if isinstance(include, str):
-            include = [include]
-
-        reps = [(k, self.reports_[k]) for k in include] \
-                    if hasattr(include, "__iter__") else self.reports_.items()
-
+        reps = self.preps_(include=include)
         md(self.tomdc_(reps, tone, title) if compact else self.tomdf_(reps, tone, title))
 
     def load(self, path):
@@ -225,6 +236,14 @@ class ClfReport:
             mdf[col[2:]] = mdf[col[2:]].apply(pd.to_numeric)
 
         return mdf.set_index(keys=['Estimator','*'])
+
+    def to_markdown(self, include=None, compact=False, title=None, tone=False):
+        """Returns reports as mardown.
+
+        See `show` method for parameters
+        """
+        reps = self.preps_(include=include)
+        return self.tomdc_(reps, tone, title) if compact else self.tomdf_(reps, tone, title)
 
     def _tostr(self, include=None):
         cols = ['pre', 'rec', 'spe', 'f1', 'geo', 'iba', 'sup']

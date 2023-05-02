@@ -4,18 +4,23 @@ Config file for Streamlit App
 
 """
 
-from member import Member
+from utils.member import Member
 
 
-TITLE = "My Awesome App"
+TITLE = "Gonna Rain Tomorow ?"
 
 TEAM_MEMBERS = [
     Member(
-        name="John Doe",
-        linkedin_url="https://www.linkedin.com/in/charlessuttonprofile/",
-        github_url="https://github.com/charlessutton",
+        name="Aalae Benki",
+        researchgate_url="https://www.researchgate.net/profile/Aalae-Benki",
+        github_url="https://github.com/abenki87",
     ),
-    Member("Jane Doe"),
+    Member(name="Christopher Corbin", linkedin_url="https://www.linkedin.com/in/christopher-corbin-865911146/",
+        github_url="https://github.com/tofferPika"),
+    Member(name="Romaric Reynier", linkedin_url="linkedin.com/in/romaric-reynier-069ab617b",
+        github_url="https://github.com/Romaric-Reynier")
 ]
 
-PROMOTION = "Promotion Bootcamp Data Scientist - April 2021"
+PROMOTION = "Bootcamp Data Scientist - February 2023"
+
+MAPBOX_TOKEN = 'pk.eyJ1IjoidG9mZmVyIiwiYSI6ImNqOG85ZWZuYTAxM2wycXJzMzhnZjF5ODYifQ.SqyxswaJV3siPVqlzqwoaQ'

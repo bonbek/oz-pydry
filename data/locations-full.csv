@@ -1,0 +1,50 @@
+Location,Lat,Lon,Group,Region,LocationName,Climate,KCode,Color
+Albury,-36.067,146.95,A,New South Wales,Albury,Temperate • Withouth dry season • Hot Summer,Cfa,#50bdd5
+WaggaWagga,-35.158,147.457,A,New South Wales,Wagga Wagga,Temperate • Withouth dry season • Hot Summer,Cfa,#50bdd5
+Moree,-29.4631,149.8454,B,New South Wales,Moree,Temperate • Withouth dry season • Hot Summer,Cfa,#50bdd5
+NorahHead,-33.283,151.567,C,New South Wales,Norah Head,Temperate • Withouth dry season • Hot Summer,Cfa,#50bdd5
+SydneyAirport,-33.946,151.175,C,New South Wales,Sydney Airport,Temperate • Withouth dry season • Hot Summer,Cfa,#50bdd5
+Richmond,-33.6,150.783,C,New South Wales,Richmond,Temperate • Withouth dry season • Hot Summer,Cfa,#50bdd5
+Williamtown,-32.795,151.834,C,New South Wales,Williamtown,Temperate • Withouth dry season • Hot Summer,Cfa,#50bdd5
+Brisbane,-27.469,153.025,G,Queensland,Brisbane,Temperate • Withouth dry season • Hot Summer,Cfa,#50bdd5
+GoldCoast,-28.1667,153.55,G,Queensland,Gold Coast,Temperate • Withouth dry season • Hot Summer,Cfa,#50bdd5
+BadgerysCreek,-33.877,150.751,C,New South Wales,Badgerys Creek,Temperate • Withouth dry season • Hot Summer,Cfa,#50bdd5
+CoffsHarbour,-30.32,153.116,B,New South Wales,Coffs Harbour,Temperate • Withouth dry season • Hot Summer,Cfa,#50bdd5
+Newcastle,-32.927,151.781,C,New South Wales,Newcastle,Temperate • Withouth dry season • Hot Summer,Cfa,#50bdd5
+Penrith,-33.751,150.694,C,New South Wales,Penrith,Temperate • Withouth dry season • Hot Summer,Cfa,#50bdd5
+Wollongong,-34.4248336,150.8931132,C,New South Wales,Wollongong,Temperate • Withouth dry season • Hot Summer,Cfa,#50bdd5
+Sydney,-33.86,151.211,C,New South Wales,Sydney,Temperate • Withouth dry season • Warm Summer,Cfb,#57c4dd
+Canberra,-35.308,149.2,D,Australian Capital Territory,Canberra,Temperate • Withouth dry season • Warm Summer,Cfb,#57c4dd
+Tuggeranong,-35.424,149.093,D,Australian Capital Territory,Tuggeranong,Temperate • Withouth dry season • Warm Summer,Cfb,#57c4dd
+MountGinini,-35.529,148.772,D,New South Wales,Mount Ginini,Temperate • Withouth dry season • Warm Summer,Cfb,#57c4dd
+Ballarat,-37.512,143.791,E,Victoria,Ballarat,Temperate • Withouth dry season • Warm Summer,Cfb,#57c4dd
+Bendigo,-36.743,144.329,E,Victoria,Bendigo,Temperate • Withouth dry season • Warm Summer,Cfb,#57c4dd
+MelbourneAirport,-37.665,144.832,E,Victoria,Melbourne Airport,Temperate • Withouth dry season • Warm Summer,Cfb,#57c4dd
+Melbourne,-37.8136,144.9631,E,Victoria,Melbourne,Temperate • Withouth dry season • Warm Summer,Cfb,#57c4dd
+Watsonia,-37.72,145.083,E,Victoria,Watsonia,Temperate • Withouth dry season • Warm Summer,Cfb,#57c4dd
+Sale,-38.1051139,147.0680482,T,Victoria,Sale,Temperate • Withouth dry season • Warm Summer,Cfb,#57c4dd
+Nhil,-36.3322,141.6503,F,Victoria,Nhil,Arid • Steppe • Cold,BSk,#F9F2B2
+Mildura,-34.2068859,142.1366852,S,Victoria,Mildura,Arid • Steppe • Cold,BSk,#F9F2B2
+Portland,-38.3144,141.4725,F,Victoria,Portland,Temperate • Dry Summer • Warm Summer,Csb,#9ed8e5
+Dartmoor,-37.9194,141.275,F,Victoria,Dartmoor,Temperate • Dry Summer • Warm Summer,Csb,#9ed8e5
+MountGambier,-37.745,140.794,F,South Australia,Mount Gambier,Temperate • Dry Summer • Warm Summer,Csb,#9ed8e5
+Cairns,-16.8858,145.7453,H,Queensland,Cairns,Tropical • Monsoon,Am,#95ab52
+Townsville,-19.2525,146.765,H,Queensland,Townsville,Tropical • Savanna,Aw,#cde682
+Adelaide,-34.948,138.52,I,South Australia,Adelaide,Temperate • Dry Summer • Warm Summer,Csb,#9ed8e5
+Nuriootpa,-34.466,138.991,I,South Australia,Nuriootpa,Temperate • Dry Summer • Warm Summer,Csb,#9ed8e5
+Woomera,-31.199,136.825,R,South Australia,Woomera,Arid • Desert • Hot,BWh,#ea884c
+AliceSprings,-23.795,133.889,N,Northern Territory,Alice Springs,Arid • Desert • Hot,BWh,#ea884c
+Uluru,-25.344,131.036,N,Northern Territory,Uluru,Arid • Desert • Hot,BWh,#ea884c
+Albany,-35.025,117.865,J,Western Australia,Albany,Temperate • Dry Summer • Warm Summer,Csb,#9ed8e5
+Witchcliffe,-34.351,115.16,J,Western Australia,Witchcliffe,Temperate • Dry Summer • Warm Summer,Csb,#9ed8e5
+Walpole,-34.977,116.731,J,Western Australia,Walpole,Temperate • Dry Summer • Warm Summer,Csb,#9ed8e5
+PearceRAAF,-31.667,116.017,K,Western Australia,Pearce RAAF,Temperate • Dry Summer • Hot Summer,Csa,#5fb0c2
+PerthAirport,-31.933,115.967,K,Western Australia,Perth Airport,Temperate • Dry Summer • Hot Summer,Csa,#5fb0c2
+Perth,-31.952,115.86,K,Western Australia,Perth,Temperate • Dry Summer • Hot Summer,Csa,#5fb0c2
+SalmonGums,-32.981,121.643,L,Western Australia,Salmon Gums,Arid • Steppe • Cold,BSk,#F9F2B2
+Hobart,-42.836,147.51,M,Tasmania,Hobart,Temperate • Withouth dry season • Warm Summer,Cfb,#57c4dd
+Launceston,-41.545,147.214,M,Tasmania,Launceston,Temperate • Withouth dry season • Warm Summer,Cfb,#57c4dd
+Darwin,-12.425,130.893,O,Northern Territory,Darwin,Tropical • Savanna,Aw,#cde682
+Katherine,-14.521,132.378,O,Northern Territory,Katherine,Tropical • Savanna,Aw,#cde682
+Cobar,-31.498,145.83,Q,New South Wales,Cobar,Arid • Steppe • Hot,BSh,#f2e996
+NorfolkIsland,-29.0323,167.95,P,External Territory,Norfolk Island,Temperate • Withouth dry season • Hot Summer,Cfa,#50bdd5
