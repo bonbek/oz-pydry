@@ -9,11 +9,10 @@ import config
 from models.models import models, acc_yes_nop
 import utils.scraping as scrap
 import utils.tween as tw
+import utils.layout as layout
 
 # base stylesheet
-with open("styles.css", "r") as f:
-    style = f.read()
-    st.markdown(f"<style>{style}</style>", unsafe_allow_html=True)
+layout.base_styles()
 
 # Init stuff
 if 'last_acc' not in st.session_state:
@@ -48,6 +47,8 @@ with st.sidebar:
             # 'nav-link': {'font-weight':'normal'},
             'icon':{'display':'none'}
         })
+
+# layout.show_members()
 
 # Background placeholder
 bg_placeholder = st.empty()

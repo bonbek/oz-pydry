@@ -4,7 +4,7 @@ Config file for Streamlit App
 
 """
 
-from member import Member
+from utils.member import Member
 
 
 TITLE = "Gonna Rain Tomorow ?"
@@ -15,12 +15,12 @@ TEAM_MEMBERS = [
         researchgate_url="https://www.researchgate.net/profile/Aalae-Benki",
         github_url="https://github.com/abenki87",
     ),
-    Member(name="Cristopher Corbin", linkedin_url="https://www.linkedin.com/in/christopher-corbin-865911146/",
+    Member(name="Christopher Corbin", linkedin_url="https://www.linkedin.com/in/christopher-corbin-865911146/",
         github_url="https://github.com/tofferPika"),
     Member(name="Romaric Reynier", linkedin_url="linkedin.com/in/romaric-reynier-069ab617b",
         github_url="https://github.com/Romaric-Reynier")
 ]
 
-PROMOTION = "Promotion Bootcamp Data Scientist - February 2023"
+PROMOTION = "Bootcamp Data Scientist - February 2023"
 
 MAPBOX_TOKEN = 'pk.eyJ1IjoidG9mZmVyIiwiYSI6ImNqOG85ZWZuYTAxM2wycXJzMzhnZjF5ODYifQ.SqyxswaJV3siPVqlzqwoaQ'
