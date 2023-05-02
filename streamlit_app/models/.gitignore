@@ -1,0 +1,9 @@
+*
+!.gitignore
+!dnnA.keras
+!dnnB.keras
+!dnnC.keras
+!models.py
+!scaler_dnnA.joblib
+!scaler_dnnB.joblib
+!scaler_dnnC.joblib
