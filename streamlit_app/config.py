@@ -19,3 +19,5 @@ TEAM_MEMBERS = [
 ]
 
 PROMOTION = "Promotion Bootcamp Data Scientist - April 2021"
+
+MAPBOX_TOKEN = 'pk.eyJ1IjoidG9mZmVyIiwiYSI6ImNqOG85ZWZuYTAxM2wycXJzMzhnZjF5ODYifQ.SqyxswaJV3siPVqlzqwoaQ'
