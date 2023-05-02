@@ -12,48 +12,45 @@ layout.base_styles()
 layout.show_members()
 
 
-def show(report, include=None, compact=False, title=None, tone=False):
-    if isinstance(include, str):
-        include = [include]
-
-    reps = [(k, report.reports_[k]) for k in include] \
-                if hasattr(include, "__iter__") else report.reports_.items()
-
-    return report.tomdc_(reps, tone, title) if compact else report.tomdf_(reps, tone, title)
-
 title = "Preprocessing"
 sidebar_name = "Preprocessing"
 
 
 st.title(title)
 
+
 st.markdown(
     """
-    Gestion des Nans, PCA, création des 3 cluster Climats, équilibrage des données
+    Concernant la gestion des NaNs, nous évaluons nos différents modèles sans les lignes contenant les NaNs, en les transformant par le mode ou encore la moyenne. 
+    """
+)
+st.markdown(
+    """
+    Nous avons discrétisé les variables catégorielles pour qu'elles puissent être traitées par tous les modèles 
     """
 )
 
 st.markdown(
     """
-    Résulats des pca
+    Nous avons eu l'idée de créer les modèles en fonction des 3 zones climatiques. La méthode de clustering n'as pas abouti à nos attentes de labellisation par localisation. Nous avons donc labelisé manuellement les lieux en fonction de leur situation géographique.
     """
 )
 
-st.image(Image.open("assets/variables-pca.png"))
-report1 = ClfReport("assets/balancing-report.json")
+st.markdown(
+    """
+    Pour l'équilibrage des données, nous évaluons systématiquement les deux méthodes de réquilibrage (over/under sampling) pour les modèles. La méthode under sampling reste souvent la plus performante.
+    """
+)
+
+st.markdown(
+    """
+    Notre apporche pour optimiser nos calculs via la méthode pca n'a pas été concluant, chaque modèle perd en précision et le temps de calcul n'est pas plus rapide. Nous avons donc utilisé toutes les variables
+    """
+)
+# st.image(Image.open("assets/variables-pca.png"))
 report2 = ClfReport("assets/pca-unbalanced.json")
-report3 = ClfReport("assets/feature-sel-report.json")
 
-st.markdown(report1.to_markdown(compact=True, tone=True, title= "**Score KNN**"), unsafe_allow_html=True)
-# with st.expander("Résultat KNN"):
-#     st.write("Voici les données :", st.markdown(show(report1, tone = True, compact = True, title= "**Score KNN**"), unsafe_allow_html= True))
-
-
-st.markdown(report2.to_markdown(tone = True, compact = True, title= "**Score PCA**"), unsafe_allow_html= True)
+    
+# st.markdown(show(report2, tone = True, compact = True, title= "**Score PCA**"), unsafe_allow_html= True)
 with st.expander("Résultat PCA"):
-    st.markdown(report2.to_markdown(tone = True, compact = True, title= "**Score PCA**"), unsafe_allow_html= True)
-
-
-st.markdown(report3.to_markdown(tone = True, compact = True, title= "**Feature Sel Report**"), unsafe_allow_html= True)
-
-
+    st.write("Voici les données :", report2.to_markdown(tone = True, compact = True, title= "**Score PCA**"), unsafe_allow_html= True)
