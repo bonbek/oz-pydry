@@ -94,6 +94,7 @@ class ClfReport:
         mkt = self.tone_ if tone else (lambda v: "")
         out = "|%s|test<br>acc.|train<br>acc.|0<br>pre&nbsp; . &nbsp;rec&nbsp; . &nbsp;&nbsp;f1|1<br>pre&nbsp; . &nbsp;rec&nbsp; . &nbsp;&nbsp;f1|<br>%% bal.|<br>obs|\n" % (header.replace('\n',"<br>") if header is not None else "")
         out+= "|-|:-:|:-:|:-:|:-:|:-:|:-|\n"
+        mks = lambda v: f'background:hsl(calc((({v} - .5) / .5) * 120), 70%, 85%, calc({v}));'
         for k, r in reps:
             s, f, a, b = r['daset'] # dataset balancing stats
             cl = 'c' if tone else ""
