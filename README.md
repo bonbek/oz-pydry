@@ -22,16 +22,14 @@ pip install -r requirements.txt
 
 ## Streamlit App
 
-**Work in progress**
-
 To run the app :
 
 ```shell
 cd streamlit_app
-conda create --name my-awesome-streamlit python=3.9
-conda activate my-awesome-streamlit
 pip install -r requirements.txt
-streamlit run app.py
+streamlit run Introduction.py
 ```
 
 The app should then be available at [localhost:8501](http://localhost:8501).
+
+> :warning: Some of the models used in the app (_Modeling page_) aren't included on this repository due to their file size, please contact us if you want a copy of those.
