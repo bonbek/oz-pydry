@@ -25,13 +25,13 @@ st.subheader(
 st.markdown(
     """
     Après avoir étudié les caractéristiques de notre base de données, nous avons établi plusieurs hypothèses afin de créer un modèle baseline.
-    Nous l'avons ensuite comparé avec d'autres modèles de machine learning tout en appliquant des preprocessings spécifiques: avec ou sans PCA, avec ou sans les valeurs manquantes, avec les 3 climats, les 9 sous-climats ou l’ensemble d'entraînement, l’équilibrage des classes...
+    Nous l'avons ensuite comparé avec d'autres modèles de machine learning tout en appliquant des preprocessing spécifiques: avec ou sans PCA, avec ou sans les valeurs manquantes, avec les 3 climats, les 9 sous-climats ou l’ensemble d'entraînement, l’équilibrage des classes...
 
     Les performances de ces modèles étant peu concluantes, nous avons donc appliqué un modèle de Deep Learning qui s'est révélé plus homogène dans ses résultats, notamment sur le _recall_ et la _precision_ de la classe minoritaire _(Yes)_.
 
     Nous sommes arrivés proches des résultats obtenus par les modèles de prédiction utilisés en Australie sur la période étudiée :smiley:.
     
-    En fin de compte nous retenons une certaine déception sur les performances obtenues, alors que nous sommes focalisés sur une seule variable cible binaire.
+    En fin de compte nous retirons une certaine déception sur les performances obtenues, alors que nous nous sommes focalisés sur une seule variable cible binaire.
     """
 )
 
@@ -43,11 +43,11 @@ st.subheader(
 
 st.markdown(
     """
-    Avec du temps supplémentaire, nous aurions étudié plus en détail l'aspect temporel des variables, en effet, à mesure de notre avancement nous avons remarqué des "comportements saisonniers" sur certains de nos modèles (additionnés au climats).
+    Avec du temps supplémentaire, nous aurions étudié plus en détail l'aspect temporel des variables, en effet, à mesure de notre avancement nous avons remarqué des "comportements saisonniers" sur certains de nos modèles (additionnés aux climats).
     """
 )
 
-with st.expander("Aperçu dans le temps de predictions projetées sur les variables principales"):
+with st.expander("Aperçu dans le temps de prédictions projetées sur les variables principales"):
     st.image('./assets/plot-preds-seasonal-features.png')
     report = ClfReport('./assets/per-season-climate-lr.json')
     st.write(report.to_markdown(compact=True, tone=True, title='Per season & climate model _(LogReg.)_'), unsafe_allow_html=True)
@@ -61,9 +61,9 @@ with st.expander("Aperçu dans le temps de predictions projetées sur les variab
 
 st.markdown(
     """
-    Nous aurions aussi consolidé le dataset avec des nouvelles variables issue de la topographie des lieu, à l'image du modèle AROME (modèle Français). 
+    Nous aurions aussi consolidé le dataset avec des nouvelles variables issue de la topographie des lieux, à l'image du modèle AROME (modèle Français). 
     
-    Pour ces axes de recherche, des modèles de type RNN (ou du moins une combinaison avec) nous semblent une piste adapté.
+    Pour ces axes de recherche, des modèles de type RNN (ou du moins une combinaison avec) nous semblent une piste adaptée.
     """
 )
 
